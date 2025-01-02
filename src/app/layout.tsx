@@ -1,16 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter} from "next/font/google";
 import "./globals.css";
+import { Button } from "@/components/ui/button";
+import { Search, ShoppingBag, User } from 'lucide-react';
+import { NavBar } from "@/components/nav/NavBar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ['latin'] });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -24,10 +20,162 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={inter.className}>
+        <header className="border-b px-8">
+          <nav className="container py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-8">
+                <h1 className="text-2xl font-bold">Hilly Storagespace</h1>
+                <NavBar />
+              </div>
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon">
+                  <Search className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                  <User className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                  <ShoppingBag className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </nav>
+        </header>
         {children}
+        <footer className="bg-primary text-primary-foreground">
+          <div className="container py-12">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div>
+                <h3 className="font-semibold mb-4">Customer Service</h3>
+                <ul className="space-y-2">
+                  <li>
+                    <Button
+                      variant="link"
+                      className="text-primary-foreground p-0"
+                    >
+                      Contact Us
+                    </Button>
+                  </li>
+                  <li>
+                    <Button
+                      variant="link"
+                      className="text-primary-foreground p-0"
+                    >
+                      Delivery Information
+                    </Button>
+                  </li>
+                  <li>
+                    <Button
+                      variant="link"
+                      className="text-primary-foreground p-0"
+                    >
+                      Returns Policy
+                    </Button>
+                  </li>
+                  <li>
+                    <Button
+                      variant="link"
+                      className="text-primary-foreground p-0"
+                    >
+                      Size Guide
+                    </Button>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-4">About Us</h3>
+                <ul className="space-y-2">
+                  <li>
+                    <Button
+                      variant="link"
+                      className="text-primary-foreground p-0"
+                    >
+                      Our Story
+                    </Button>
+                  </li>
+                  <li>
+                    <Button
+                      variant="link"
+                      className="text-primary-foreground p-0"
+                    >
+                      Store Locator
+                    </Button>
+                  </li>
+                  <li>
+                    <Button
+                      variant="link"
+                      className="text-primary-foreground p-0"
+                    >
+                      Careers
+                    </Button>
+                  </li>
+                  <li>
+                    <Button
+                      variant="link"
+                      className="text-primary-foreground p-0"
+                    >
+                      Sustainability
+                    </Button>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-4">Shopping With Us</h3>
+                <ul className="space-y-2">
+                  <li>
+                    <Button
+                      variant="link"
+                      className="text-primary-foreground p-0"
+                    >
+                      Gift Cards
+                    </Button>
+                  </li>
+                  <li>
+                    <Button
+                      variant="link"
+                      className="text-primary-foreground p-0"
+                    >
+                      Student Discount
+                    </Button>
+                  </li>
+                  <li>
+                    <Button
+                      variant="link"
+                      className="text-primary-foreground p-0"
+                    >
+                      Military Discount
+                    </Button>
+                  </li>
+                  <li>
+                    <Button
+                      variant="link"
+                      className="text-primary-foreground p-0"
+                    >
+                      Affiliate Program
+                    </Button>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-4">Newsletter</h3>
+                <p className="text-sm mb-4">
+                  Sign up for exclusive offers, new arrivals, and outdoor
+                  inspiration.
+                </p>
+                <Button className="w-full bg-white text-primary hover:bg-gray-100">
+                  Subscribe Now
+                </Button>
+              </div>
+            </div>
+            <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-sm text-center">
+              <p>
+                &copy; {new Date().getFullYear()} Mountain Warehouse. All rights
+                reserved.
+              </p>
+            </div>
+          </div>
+        </footer>
       </body>
     </html>
   );

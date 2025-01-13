@@ -1,7 +1,12 @@
 import { ProductDetails } from "@/components/pdp/ProductDetails";
 import { ProductGallery } from "@/components/pdp/ProductGallery";
 import { ProductInfo } from "@/components/pdp/ProductInfo";
-import { getProductById } from "@/lib/services/ProductService";
+import { executeGql } from "@/lib/api";
+import { graphql } from "@/lib/graphql/graphql";
+import { IProduct } from "@/lib/models";
+import { defaultSession, SessionData } from "@/lib/session";
+import { getIronSession } from "iron-session";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 interface IProductPageProps {
@@ -10,16 +15,55 @@ interface IProductPageProps {
   }>;
 }
 
+const ProductQuery = graphql(`
+  query GetProduct($productId: Int!) {
+    product(productId: $productId) {
+      id
+      name
+      description
+      price
+      brand
+      images
+      ratingSummary {
+        average
+        count
+      }
+      options {
+        id
+        name
+        isRequired
+        values {
+          id
+          name
+          hex
+          image
+        }
+      }
+    }
+  }
+`);
+
+async function getIronSessionData(): Promise<SessionData> {
+  const session = await getIronSession<SessionData>(await cookies(), {
+    password: process.env.IRON_PASSWORD as string,
+    cookieName: process.env.IRON_NAME as string,
+  });
+  return session ?? defaultSession;
+}
+
 const ProductPage = async ({ params }: IProductPageProps) => {
   const [productId] = (await params).slug;
   // const [productId, ..._rest] = (await params).slug; to get the rest of the data i.e. default colour/size
+  const session = await getIronSessionData();
 
-  const product = await getProductById(Number.parseInt(productId)).catch(
-    (error) => {
-      console.error(error);
-      redirect("/");
-    }
+  const productQuery = await executeGql(
+    ProductQuery,
+    {
+      productId: Number.parseInt(productId),
+    },
+    session
   );
+  const product = productQuery.data.product as IProduct;
 
   if (!product) redirect("/");
 
@@ -35,4 +79,4 @@ const ProductPage = async ({ params }: IProductPageProps) => {
 };
 
 export default ProductPage;
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";

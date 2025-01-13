@@ -25,6 +25,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
     );
     await fetch(`api/AddItemToBasket`, {
       method: "POST",
+      credentials: 'include',
       body: JSON.stringify({
         productId: product.id,
         quantity: 1,

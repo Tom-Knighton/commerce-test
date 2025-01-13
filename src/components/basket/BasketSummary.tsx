@@ -1,3 +1,5 @@
+'use client';
+'client only';
 import { Check } from "lucide-react";
 
 interface OrderSummaryProps {
@@ -6,11 +8,23 @@ interface OrderSummaryProps {
   subtotal: number;
 }
 
+
+
 export function OrderSummary({
   itemsTotal,
   savings,
   subtotal,
 }: OrderSummaryProps) {
+
+  const generateLinkAndRedirect = async () => {
+    const result = await fetch(`/api/Checkout`, {
+      method: 'POST'
+    });
+    const link = (await result.json()).redirectUri;
+
+    window.location.href = link;
+  }
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm">
       <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
@@ -53,7 +67,7 @@ export function OrderSummary({
           </button>
         </div>
 
-        <button className="w-full bg-green-600 text-white py-3 rounded font-medium hover:bg-green-700">
+        <button className="w-full bg-green-600 text-white py-3 rounded font-medium hover:bg-green-700" onClick={() => { generateLinkAndRedirect() }}>
           Checkout Now
         </button>
 

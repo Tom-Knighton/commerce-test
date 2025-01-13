@@ -1,3 +1,4 @@
+'use server';
 import { client } from "../api";
 import { ICategory } from "../models";
 

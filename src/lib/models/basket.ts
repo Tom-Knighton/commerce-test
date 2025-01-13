@@ -17,7 +17,7 @@ interface IBasketItem {
     variantId?: string;
     price: number;
     productName: string;
-    sKU: string;
+    sku: string;
     imageUrl: string;
     warehouse: string;
     colour?: string;

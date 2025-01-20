@@ -1,10 +1,11 @@
-import { IProductOption } from "@/lib/models";
+import { ProductOptionsFragment } from "@/lib/graphql/fragments";
+import { ResultOf } from "gql.tada";
 import { Button } from "../ui/button";
 
 interface IProductOptionSelectProps {
-  option: IProductOption;
-  selectedId?: string;
-  setSelected: (_id: string) => void;
+  option: ResultOf<typeof ProductOptionsFragment>["node"];
+  selectedId?: number;
+  setSelected: (_id: number) => void;
 }
 
 const ProductOptionSelect = ({
@@ -15,18 +16,26 @@ const ProductOptionSelect = ({
   return (
     <div>
       <div className="flex justify-between items-center">
-        <label className="text-sm font-medium">{option.name}</label>
+        <label className="text-sm font-medium">{option.displayName}</label>
       </div>
       <div className="grid grid-cols-5 gap-2 mt-2">
-        {option.values.map((v) => (
-          <Button
-            key={v.id}
-            variant={selectedId === v.id ? "default" : "outline"}
-            onClick={() => setSelected(v.id)}
-          >
-            {v.name}
-          </Button>
-        ))}
+        {option.__typename === "MultipleChoiceOption" && (
+          <>
+            {option.values.edges?.map((edge) => (
+              <Button
+                key={edge.node.entityId}
+                variant={
+                  selectedId === edge.node.entityId
+                    ? "default"
+                    : "outline"
+                }
+                onClick={() => setSelected(edge.node.entityId)}
+              >
+                {edge.node.label}
+              </Button>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );

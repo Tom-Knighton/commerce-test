@@ -1,7 +1,8 @@
-import { IProduct } from "@/lib/models";
+import { ProductFieldFragments } from "@/lib/graphql/fragments";
+import { ResultOf } from "gql.tada";
 
 type ProductDetailsProps = {
-  product: IProduct;
+  product: ResultOf<typeof ProductFieldFragments>;
 };
 
 export function ProductDetails({ product }: ProductDetailsProps) {
@@ -9,7 +10,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     <div className="space-y-8">
       <div>
         <h2 className="text-xl font-semibold mb-4">Product Details</h2>
-        <p>{product.description}</p>
+        <p>{product.plainTextDescription}</p>
       </div>
 
       <div>

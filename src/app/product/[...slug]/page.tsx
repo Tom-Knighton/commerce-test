@@ -2,8 +2,12 @@ import { ProductDetails } from "@/components/pdp/ProductDetails";
 import { ProductGallery } from "@/components/pdp/ProductGallery";
 import { ProductInfo } from "@/components/pdp/ProductInfo";
 import { executeGql } from "@/lib/api";
-import { graphql } from "@/lib/graphql/graphql";
-import { IProduct } from "@/lib/models";
+import {
+  ImageFieldsFragment,
+  ProductFieldFragments,
+} from "@/lib/graphql/fragments";
+import { readFragment } from "@/lib/graphql/graphql";
+import { getProductQuery } from "@/lib/graphql/queries";
 import { defaultSession, SessionData } from "@/lib/session";
 import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
@@ -14,34 +18,6 @@ interface IProductPageProps {
     slug: string[];
   }>;
 }
-
-const ProductQuery = graphql(`
-  query GetProduct($productId: Int!) {
-    product(productId: $productId) {
-      id
-      name
-      description
-      price
-      brand
-      images
-      ratingSummary {
-        average
-        count
-      }
-      options {
-        id
-        name
-        isRequired
-        values {
-          id
-          name
-          hex
-          image
-        }
-      }
-    }
-  }
-`);
 
 async function getIronSessionData(): Promise<SessionData> {
   const session = await getIronSession<SessionData>(await cookies(), {
@@ -57,20 +33,27 @@ const ProductPage = async ({ params }: IProductPageProps) => {
   const session = await getIronSessionData();
 
   const productQuery = await executeGql(
-    ProductQuery,
+    getProductQuery,
     {
       productId: Number.parseInt(productId),
     },
     session
   );
-  const product = productQuery.data.product as IProduct;
-
+  const product = readFragment(
+    ProductFieldFragments,
+    productQuery.data.site.product
+  );
   if (!product) redirect("/");
+
+  const imageUrls =
+    product.images.edges?.flatMap(
+      (i) => readFragment(ImageFieldsFragment, i.node).url960wide
+    ) ?? [];
 
   return (
     <div className="container py-10 px-10">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-        <ProductGallery images={product.images} productName={product.name} />
+        <ProductGallery images={imageUrls} productName={product.name} />
         <ProductInfo product={product} />
       </div>
       <ProductDetails product={product} />

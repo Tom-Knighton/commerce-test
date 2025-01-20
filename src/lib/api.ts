@@ -1,55 +1,8 @@
 "use server";
 import { TypedDocumentNode } from "@graphql-typed-document-node/core";
-import axios from "axios";
 import { print } from "graphql";
-import { cookies } from "next/headers";
 import { SessionData } from "./session";
 
-const client = axios.create({
-  baseURL: process.env.API_BASE_URL,
-  headers: {
-    env: process.env.NODE_ENV,
-  },
-  withCredentials: true,
-});
-
-client.interceptors.request.use(
-  async function (config) {
-    config.withCredentials = true;
-    const customerId = (await cookies()).get("CustomerId");
-    const cookiesString = (await cookies())
-      .getAll()
-      .map((c) => `${c.name}=${c.value}`)
-      .join("; ");
-    config.headers["cookie"] = cookiesString;
-    config.headers["CustomerId"] = customerId?.value;
-    console.log(config);
-    return config;
-  },
-  function (error) {
-    return Promise.reject(error);
-  }
-);
-
-client.interceptors.response.use(
-  async function (response) {
-    const setCookie = response.headers["set-cookie"];
-    if (setCookie) {
-      const cookieStore = await cookies();
-      setCookie.forEach((cookieString: string) => {
-        const [nameValuePart] = cookieString.split(";");
-        const [name, value] = nameValuePart.split("=");
-
-        cookieStore.set(name.trim(), value.trim());
-      });
-    }
-
-    return response;
-  },
-  function (error) {
-    return Promise.reject(error);
-  }
-);
 interface IGraphqlExecutionResponse<T> {
   data: T;
   errors: string[];
@@ -58,27 +11,35 @@ interface IGraphqlExecutionResponse<T> {
 const executeGql = async <T, TVars>(
   document: TypedDocumentNode<T, TVars>,
   variables: TVars,
-  session: SessionData
+  session: SessionData | undefined = undefined
 ): Promise<IGraphqlExecutionResponse<T>> => {
   const cookies = [];
-  if (session.sessionId) {
-    cookies.push(`SHOP_SESSION_TOKEN=${session.sessionId}`);
+  if (session) {
+    if (session.sessionId) {
+      cookies.push(`SHOP_SESSION_TOKEN=${session.sessionId}`);
+    }
+    if (session.sessionRotation) {
+      cookies.push(`SHOP_SESSION_ROTATION_TOKEN=${session.sessionRotation}`);
+    }
+    if (session.hostRotation) {
+      cookies.push(
+        `__HOST-SHOP_SESSION_ROTATION_TOKEN=${session.hostRotation}`
+      );
+    }
+    if (session.cartId) {
+      cookies.push(`BasketId=${session.cartId}`);
+    }
   }
-  if (session.sessionRotation) {
-    cookies.push(`SHOP_SESSION_ROTATION_TOKEN=${session.sessionRotation}`);
-  }
-  if (session.hostRotation) {
-    cookies.push(`__HOST-SHOP_SESSION_ROTATION_TOKEN=${session.hostRotation}`);
-  }
-  if (session.cartId) {
-    cookies.push(`BasketId=${session.cartId}`);
-  }
+
   const cookieHeader = cookies.join("; ");
 
-  const response = await fetch(process.env.API_BASE_URL + "graphql", {
+  const response = await fetch(process.env.API_BASE_URL as string, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${
+        process.env.BIGCOMMERCE_STOREFRONT_TOKEN as string
+      }`,
       cookie: cookieHeader,
     },
     credentials: "include",
@@ -154,4 +115,4 @@ const executeGql = async <T, TVars>(
 //   return data;
 // }
 
-export { client, executeGql };
+export { executeGql };

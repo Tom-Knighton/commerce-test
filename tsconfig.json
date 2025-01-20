@@ -19,7 +19,7 @@
       },
       { 
         "name": "gql.tada/ts-plugin", 
-        "schema": "https://localhost:7002/graphql", 
+        "schema": "./bigcommerce.graphql",
         "tadaOutputLocation": "./src/lib/graphql/graphql-env.d.ts"
       } 
     ],

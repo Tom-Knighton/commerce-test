@@ -1,8 +1,11 @@
 import { BasketItem } from "@/components/basket/BasketItem";
 import { OrderSummary } from "@/components/basket/BasketSummary";
 import { executeGql } from "@/lib/api";
-import { graphql } from "@/lib/graphql/graphql";
-import { IBasketDto } from "@/lib/models";
+import { MoneyFieldsFragment } from "@/lib/graphql/fragments";
+import { CartFieldsFragment } from "@/lib/graphql/fragments/CartFieldsFragment";
+import { CartPhysicalItemFragment } from "@/lib/graphql/fragments/CartPhysicalItemFragment";
+import { readFragment, ResultOf } from "@/lib/graphql/graphql";
+import { GetBasketQuery } from "@/lib/graphql/queries";
 import { defaultSession, SessionData } from "@/lib/session";
 import { getIronSession } from "iron-session";
 import { AlertTriangle } from "lucide-react";
@@ -16,48 +19,31 @@ async function getIronSessionData(): Promise<SessionData> {
   return session ?? defaultSession;
 }
 
-const GetBasketQuery = graphql(`
-  query GetBasket($basketId: String!) {
-    basket(basketId: $basketId) {
-      basketId
-      totalItems
-      items {
-        basketItemId
-        size
-        selectedOptions {
-          optionId
-          optionName
-          optionValue
-          optionValueId
-        }
-        productId
-        quantity
-        variantId
-        price
-        productName
-        sku
-        imageUrl
-        warehouse
-        colour
-      }
-      subTotal
-    }
-  }
-`);
-
 const BasketPage = async () => {
   const session = await getIronSessionData();
-  let basket: IBasketDto | null = null;
+  let basket: ResultOf<typeof CartFieldsFragment> | null = null;
   if (session.cartId && session.sessionId) {
     const result = await executeGql(
       GetBasketQuery,
       {
-        basketId: session.cartId,
+        cartId: session.cartId,
       },
       session
     );
-    basket = result.data?.basket as IBasketDto;
+    basket = readFragment(CartFieldsFragment, result.data.site.cart);
   }
+
+  const subTotal = () => {
+    if (basket) {
+      return basket.lineItems.physicalItems.reduce((acc, item) => {
+        const itemData = readFragment(CartPhysicalItemFragment, item);
+        const itemPrice = readFragment(MoneyFieldsFragment, itemData.listPrice)
+          .value as number;
+        return acc + itemPrice;
+      }, 0);
+    }
+    return 0;
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -67,22 +53,34 @@ const BasketPage = async () => {
             {basket && (
               <>
                 <h1 className="text-2xl font-semibold mb-4">
-                  Your Shopping Basket ({basket.totalItems} Items)
+                  Your Shopping Basket ({basket.lineItems.totalQuantity}
+                  Items)
                 </h1>
 
                 <div className="bg-white rounded-lg shadow-sm">
-                  {basket.items.map((item, index) => (
-                    <BasketItem
-                      key={index}
-                      code={item.productId}
-                      currentPrice={item.price}
-                      image={item.imageUrl}
-                      name={item.productName}
-                      option={item.colour ?? ""}
-                      size={item.size ?? ""}
-                      originalPrice={item.price}
-                    />
-                  ))}
+                  {basket.lineItems.physicalItems.map((node, index) => {
+                    const item = readFragment(CartPhysicalItemFragment, node);
+                    return (
+                      <BasketItem
+                        key={index}
+                        code={item.entityId}
+                        currentPrice={
+                          (readFragment(MoneyFieldsFragment, item.listPrice)
+                            .value as number) ?? 0
+                        }
+                        image={item.image?.url960wide ?? ""}
+                        name={item.name}
+                        option={""}
+                        size={""}
+                        // option={item.colour ?? ""}
+                        // size={item.size ?? ""}
+                        originalPrice={
+                          (readFragment(MoneyFieldsFragment, item.listPrice)
+                            .value as number) ?? 0
+                        }
+                      />
+                    );
+                  })}
                 </div>
 
                 <div className="mt-4 flex items-center gap-2 text-amber-700 bg-amber-50 p-4 rounded">
@@ -95,9 +93,9 @@ const BasketPage = async () => {
 
                 <div className="lg:col-span-1">
                   <OrderSummary
-                    itemsTotal={basket.subTotal ?? 0}
+                    itemsTotal={subTotal() ?? 0}
                     savings={0}
-                    subtotal={basket.subTotal ?? 0}
+                    subtotal={subTotal() ?? 0}
                   />
                 </div>
               </>
